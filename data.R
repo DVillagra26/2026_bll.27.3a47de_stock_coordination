@@ -9,19 +9,25 @@ library(grid) # for unit()
 library(RColorBrewer)
 library(readr)
 library(ggplot2)
-library(rcef)
+
 library(icesRDBES)
+library(remotes)
+remotes::install_github("DVillagra26/rcef", dependencies = TRUE, force = TRUE)
+library(rcef)
 
 # taf.bootstrap()
 mkdir("data")
 mkdir("report")
 mkdir("report/figures")
 
+
+
+############### USING INTERCATCH DATA #################
 boot_path <- "./boot/data"
 data_path <- "./data"
 
 ## To files:
-funICoutCEF(dat_path = boot_path, 
+funICoutCEF(dat_path = boot_path,
             years = 2025,
             metier6 = "fleet",
             output_format = "to_file",
@@ -30,8 +36,8 @@ funICoutCEF(dat_path = boot_path,
             file_prefix = "bll_2025_")
 
 
-catch_data    <- read_csv(file.path(data_path, "bll_2025_catches_CEF_v17.1.csv"))
-distributions_data <- read_csv(file.path(data_path, "bll_2025_distributions_CEF_v17.1.csv"))
+catch_data    <- read.taf(file.path(data_path, "bll_2025_catches_CEF_v17.1.csv"))
+distributions_data <- read.taf(file.path(data_path, "bll_2025_distributions_CEF_v17.1.csv"))
 
 
 catch_data <- derive_fields(catch_data)
@@ -57,10 +63,7 @@ my_payload_cef <- list(
 zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = "./data")
 
 
-usethis::create_from_github(
-  "https://github.com/DVillagra26/2026_bll.27.3a47de_stock_coordination.git",
-  destdir = "~"
-)
+
 
 ## ###########################################################################
 ## The same data? The InterCatch conversion against the RDBES download

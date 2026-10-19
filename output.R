@@ -177,7 +177,7 @@ stopifnot(caton$unit == "in tonnes", canum$unit == "in numbers", weca$unit == "i
 ### Table 3 of the CatchAndSampleDataTables of InterCatch: the same catch, numbers and mean weights, before they
 ### are added up - a row for every stratum (country, catch category, season, area, fleet) and length. The
 ### numbers (CANUM) are in fish and the mean weights (WECA) in grams, as in canum and weca.
-catch_and_samples <- readxl::read_excel("boot/data/2025/CatchAndSampleDataTables.xlsx", sheet = "table 3",
+catch_and_samples <- readxl::read_excel("boot/data/2025/CatchAndSampleDataTables.xlsx", sheet = "Table 2",
                                         col_types = "text")
 
 
