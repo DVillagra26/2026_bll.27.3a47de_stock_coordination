@@ -1,0 +1,4 @@
+recordType,version,versionDescription,calendarYear,yearStartDate,year,workingGroup,stock,catchCategory,seasonType,seasonValue,areaType,areaValue,fleetValue,variableType,variableUnit,total,variance,numTrips
+CC,1,WGNSSK 2026 first run discard raising,Y,,2025,WGNSSK,bll.27.3a47de,BMS,,,,,,WeightLive,t,0,,
+CC,1,WGNSSK 2026 first run discard raising,Y,,2025,WGNSSK,bll.27.3a47de,Dis,,,,,,WeightLive,t,58.216031,,
+CC,1,WGNSSK 2026 first run discard raising,Y,,2025,WGNSSK,bll.27.3a47de,Lan,,,,,,WeightLive,t,1071.59688,,

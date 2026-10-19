@@ -1,0 +1,7 @@
+"source","item","rows","total_t","countries"
+"RDBES","discards reported as DisBMS (compared as Dis)",71,7.573,"DK SE"
+"RDBES","several areas in one record",1,7.563,"BE"
+"RDBES","several fleets in one record",4,0.558,"SE"
+"IC","records compared with a record that lists several areas or fleets",17,8.053,"BE SE"
+"RDBES","catch of another origin than WGEstimate",44,63.77,"DE"
+"RDBES","records that use a distribution together with records of another area, season or fleet (its numbers are shared among them by catch weight)",14,95.694,"BE"

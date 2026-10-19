@@ -1,0 +1,33 @@
+"country","category","distributionType","fleet","subarea","fish_e3_IC","fish_e3_RDBES","diff_fish_e3","status","measured_IC","measured_RDBES","classes_IC","classes_RDBES","weighted_IC","weighted_RDBES","distributions_IC","distributions_RDBES"
+"BE","Lan","Age","tbb_def_70-99_0_0_all","several areas",0,121.596,121.596,"only RDBES",0,85,0,10,0,10,0,1
+"GB-ENG","Lan","Age","otb_cru_70-99_0_0_all","27.4",0,2.525,2.525,"only RDBES",0,0,0,12,0,12,0,2
+"GB-ENG","Lan","Age","otb_def_>=120_0_0_all","27.7",0,32.633,32.633,"only RDBES",0,51,0,20,0,20,0,4
+"GB-ENG","Lan","Age","tbb_def_70-99_0_0_all","27.7",0,135.436,135.436,"only RDBES",0,107,0,36,0,36,0,4
+"NL","Lan","Age","tbb_def_70-99_0_0_all","27.4",0,304.981,304.981,"only RDBES",0,554,0,23,0,23,0,4
+"BE","Lan","LengthTotal","tbb_def_70-99_0_0_all","27.7",121.076,0,-121.076,"only IC",1050,0,34,0,34,0,1,0
+"BE","Lan","LengthTotal","tbb_def_70-99_0_0_all","several areas",0,121.599,121.599,"only RDBES",0,127,0,34,0,34,0,1
+"BE","Lan","LengthTotal","tbb_def_>=120_0_0_all","27.4",0.725,0,-0.725,"only IC",136,0,28,0,28,0,1,0
+"DE","Lan","LengthTotal","tbb_def_70-99_0_0_all","27.4",44.129,22.297,-21.832,"differs",150,142,55,51,55,51,4,3
+"FR","Lan","LengthTotal","drb_mol_0_0_0_all","27.7",5.027,3.985,-1.041,"differs",102,64,23,11,23,11,2,1
+"FR","Lan","LengthTotal","gtr_cru_0_0_0_all","27.7",0,0.931,0.931,"only RDBES",0,117,0,35,0,35,0,2
+"FR","Lan","LengthTotal","gtr_def_100-119_0_0_all","27.7",1.085,0.901,-0.184,"differs",39,84,20,30,20,30,1,1
+"FR","Lan","LengthTotal","gtr_def_120-219_0_0_all","27.7",1.375,2.42,1.045,"differs",25,87,12,37,12,37,1,2
+"FR","Lan","LengthTotal","gtr_def_>=220_0_0_all","27.7",33.905,33.7,-0.205,"same",513,694,91,103,91,103,4,4
+"FR","Lan","LengthTotal","otb_def_100-119_0_0","27.7",27.937,27.877,-0.06,"same",1026,1301,129,147,129,147,4,5
+"FR","Lan","LengthTotal","otb_def_70-99_0_0","27.7",42.234,42.191,-0.044,"same",762,787,154,152,154,152,7,7
+"GB-ENG","Lan","LengthTotal","otb_cru_70-99_0_0_all","27.4",2.217,2.525,0.309,"differs",72,73,29,35,29,35,2,2
+"GB-ENG","Lan","LengthTotal","otb_def_>=120_0_0_all","27.7",33.254,32.633,-0.621,"differs",330,330,78,81,78,81,4,4
+"GB-ENG","Lan","LengthTotal","tbb_def_70-99_0_0_all","27.7",135.222,135.436,0.215,"same",2784,2783,135,137,135,137,4,4
+"GB-SCT","Lan","LengthTotal","otb_def_>=120_0_0_all","27.4",10.423,10.423,0,"same",163,163,34,34,34,34,1,1
+"NL","Lan","LengthTotal","tbb_def_70-99_0_0_all","27.4",304.981,304.981,0,"same",554,554,121,121,121,121,4,4
+"SE","Lan","LengthTotal","otb_cru_90-119_0_0_all","27.3",4.494,4.495,0.001,"same",46,9,25,25,25,0,2,2
+"BE","Dis","Age","tbb_def_70-99_0_0_all","several areas",0,24.439,24.439,"only RDBES",0,58,0,3,0,3,0,1
+"BE","Dis","LengthTotal","tbb_def_70-99_0_0_all","several areas",24.215,24.439,0.224,"same",137,28,10,10,10,10,1,1
+"FR","Dis","LengthTotal","gtr_def_>=220_0_0_all","27.7",1.447,1.789,0.342,"differs",23,27,13,17,13,17,1,2
+"FR","Dis","LengthTotal","otb_def_70-99_0_0","27.7",0,119.706,119.706,"only RDBES",0,28,0,15,0,15,0,3
+"GB-ENG","Dis","LengthTotal","otb_def_>=120_0_0_all","27.7",2.263,2.263,0,"same",11,11,5,5,5,5,1,1
+"GB-ENG","Dis","LengthTotal","tbb_def_70-99_0_0_all","27.7",2.755,2.9,0.145,"differs",10,10,7,7,7,7,2,2
+"NL","Dis","LengthTotal","otb_cru_70-99_0_0_all","27.4",1.175,1.187,0.012,"same",1,1,1,1,1,1,1,1
+"NL","Dis","LengthTotal","otb_def_100-119_0_0_all","27.4",0.237,0.237,0,"same",1,1,1,1,1,1,1,1
+"NL","Dis","LengthTotal","tbb_def_70-99_0_0_all","27.4",69.915,74.151,4.236,"differs",16,16,12,12,12,12,4,4
+"NL","Dis","LengthTotal","tbb_def_>=120_0_0_all","27.4",0.838,0.838,0.001,"same",1,1,1,1,1,1,1,1

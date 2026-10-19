@@ -1,0 +1,10 @@
+Scenario,Catch category,Raised/Imported,Caton (t),Percent of category,No donor (rows)
+Usual method,BMS,Imported,0,NA,0
+Usual method,Dis,Imported,41.298,71,0
+Usual method with 3.a.21,Dis,Imported,41.298,74,0
+Usual method,Dis,Raised,16.918,29,24
+Usual method with 3.a.21,Dis,Raised,14.85,26,24
+Usual method,Lan,Imported,1071.597,100,0
+Usual method with 3.a.21,Lan,Imported,1071.597,100,0
+Usual method,Total,-,1129.813,100,24
+Usual method with 3.a.21,Total,-,1127.745,100,24
