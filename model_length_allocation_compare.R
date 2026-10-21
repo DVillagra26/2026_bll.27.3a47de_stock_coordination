@@ -46,8 +46,8 @@ for (p in plans)
 ### The same colours as the comparison of the raisings (model_discard_raising_compare.R)
 plan_colours <- plot_colours(factor(plans, plans), "scenario")
 
-### The landings before the discards, with their names, in every panel
-cat_labels <- c(Lan = "Landings", Dis = "Discards")
+### The landings before the discards, with their names, in every panel (the BMS last, in a panel of its own when there is any)
+cat_labels <- c(Lan = "Landings", Dis = "Discards", BMS = "BMS")
 
 ## ###########################################################################
 ## Numbers and mean weight at length, added up the same way for both plans
@@ -71,7 +71,7 @@ at_length <- function(grouping = "catchCategory", what = c("numbers", "mean weig
   })) %>%
     mutate(plan = factor(plan, plans),
            catchCategory = factor(catchCategory, names(cat_labels)),
-           length_cm = distributionClass / 10)       # the classes of the CEF are in mm
+           length_mm = distributionClass)            # the classes of the CEF are in mm, and so is every length of the scripts
 }
 
 numbers <- at_length("catchCategory", "numbers")
@@ -89,37 +89,37 @@ totals
 write.taf(totals, file = "numbers_total_by_plan.csv", dir = "output/3c_length_allocation_comparison")
 
 ### Numbers at length of the landings and of the discards, one line for each plan.
-p_numbers <- ggplot(numbers, aes(x = length_cm, y = value / 1000, colour = plan)) +
+p_numbers <- ggplot(numbers, aes(x = length_mm, y = value / 1000, colour = plan)) +
   geom_line(linewidth = 0.8) +
   scale_colour_manual(values = plan_colours, name = NULL) +
   facet_wrap(~catchCategory, ncol = 1, scales = "free_y", labeller = labeller(catchCategory = cat_labels)) +
   labs(title = "Numbers at length: the two allocation plans",
-       x = "Length (cm)", y = "Numbers (thousands)") +
+       x = "Length (mm)", y = "Numbers (thousands)") +
   app_theme()
 ggsave(fig(), p_numbers, width = 10, height = 7, dpi = 150)
 
 ### Mean weight at length, the same way.
-p_weights <- ggplot(weights, aes(x = length_cm, y = value, colour = plan)) +
+p_weights <- ggplot(weights, aes(x = length_mm, y = value, colour = plan)) +
   geom_line(linewidth = 0.8) +
   scale_colour_manual(values = plan_colours, name = NULL) +
   facet_wrap(~catchCategory, ncol = 1, scales = "free_y", labeller = labeller(catchCategory = cat_labels)) +
   labs(title = "Mean weight at length: the two allocation plans",
-       x = "Length (cm)", y = "Mean weight (g)") +
+       x = "Length (mm)", y = "Mean weight (g)") +
   app_theme()
 ggsave(fig(), p_weights, width = 10, height = 7, dpi = 150)
 
 ### The difference in numbers at length, hierarchical against usual: where the two plans give a different length distribution.
 numbers_diff <- numbers %>%
-  select(plan, catchCategory, length_cm, value) %>%
+  select(plan, catchCategory, length_mm, value) %>%
   pivot_wider(names_from = plan, values_from = value, values_fill = 0) %>%
   mutate(difference = .data[[plans[2]]] - .data[[plans[1]]])
 
-p_diff <- ggplot(numbers_diff, aes(x = length_cm, y = difference / 1000)) +
-  geom_col(fill = plan_colours[[plans[2]]], width = 0.8) +
+p_diff <- ggplot(numbers_diff, aes(x = length_mm, y = difference / 1000)) +
+  geom_col(fill = plan_colours[[plans[2]]], width = 8) +
   geom_hline(yintercept = 0, colour = "grey30") +
   facet_wrap(~catchCategory, ncol = 1, scales = "free_y", labeller = labeller(catchCategory = cat_labels)) +
   labs(title = "Numbers at length: hierarchical groups minus usual method",
-       x = "Length (cm)", y = "Difference in numbers (thousands)") +
+       x = "Length (mm)", y = "Difference in numbers (thousands)") +
   app_theme()
 ggsave(fig(), p_diff, width = 10, height = 7, dpi = 150)
 
@@ -134,13 +134,13 @@ write.taf(numbers_metier %>% select(plan, catchCategory, metier4, distributionCl
           file = "numbers_at_length_by_metier.csv", dir = "output/3c_length_allocation_comparison")
 
 for (cc in c("Lan", "Dis")) {
-  p_metier <- ggplot(numbers_metier %>% filter(catchCategory == cc), aes(x = length_cm, y = value / 1000, colour = plan)) +
+  p_metier <- ggplot(numbers_metier %>% filter(catchCategory == cc), aes(x = length_mm, y = value / 1000, colour = plan)) +
     geom_line(linewidth = 0.8) +
     scale_colour_manual(values = plan_colours, name = NULL) +
     facet_wrap(~metier4, scales = "free_y") +
     labs(title = sprintf("Numbers at length of the %s by metier: the two allocation plans",
                          if (cc == "Lan") "landings" else "discards"),
-         x = "Length (cm)", y = "Numbers (thousands)") +
+         x = "Length (mm)", y = "Numbers (thousands)") +
     app_theme()
   ggsave(fig(), p_metier, width = 11, height = 8, dpi = 150)
 }

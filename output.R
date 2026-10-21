@@ -43,6 +43,30 @@ startDateYear <- NA     #      given as "MM-DD" ("07-01"), the same for the whol
 
 
 ## ###########################################################################
+## The files of InterCatch
+## ###########################################################################
+### The files of the intercatch method (InterCatch) for the same stock and year, all the catch categories
+### together: caton, the catch in tonnes; canum, the numbers at length in fish; weca, the mean weight at
+### length in grams. Seven lines of header and then one line of values. canum and weca have a value for every
+### mm from the first length to the last - 0 where no class starts, or no fish are in it - and canum has a
+### comma for the thousands.
+read_intercatch <- function(file)
+{
+  x     <- readLines(file, warn = FALSE)
+  range <- as.numeric(strsplit(trimws(x[5]), "\\s+")[[1]])         # the first and the last length, in mm
+  list(unit   = trimws(x[7]),
+       length = seq(range[1], range[2]),
+       value  = as.numeric(gsub(",", "", strsplit(trimws(x[8]), "\\s+")[[1]])))
+}
+
+caton <- read_intercatch(file.path("boot/data", catch_year, "caton.txt"))
+canum <- read_intercatch(file.path("boot/data", catch_year, "canum.txt"))
+weca  <- read_intercatch(file.path("boot/data", catch_year, "weca.txt"))
+
+stopifnot(caton$unit == "in tonnes", canum$unit == "in numbers", weca$unit == "in grams",
+          length(canum$value) == length(canum$length), identical(canum$length, weca$length))
+
+## ###########################################################################
 ## Catch Combined (CC)
 ## ###########################################################################
 
@@ -100,6 +124,18 @@ DistributionsCombined <-
                         startDateYear = startDateYear)
 
 DistributionsCombined
+
+### The lengths are in mm - the CEF's and InterCatch's (130 to 700 for a brill of 13 to 70 cm) - and the DC and canum are the same fish, so their mean
+### length is the same too. When it is not, the two are not in the same unit (the CEF files of an older rcef had the lengths of InterCatch 10 times
+### too long) and the DC is not written, let alone uploaded.
+dc_length <- DistributionsCombined[DistributionsCombined$distributionType == "LengthTotal", ]
+stopifnot("the lengths of the DC are not in mm" = all(dc_length$distributionUnit == "mm"))
+dc_mean_length <- with(dc_length[dc_length$variableType == "Number", ], sum(distributionClass * value) / sum(value))
+ic_mean_length <- sum(canum$length * canum$value) / sum(canum$value)
+if (abs(dc_mean_length / ic_mean_length - 1) > 0.05)
+  stop("The mean length of the DC (", round(dc_mean_length), " mm) and of InterCatch (", round(ic_mean_length), " mm) are not the same: the lengths are not ",
+       "in the same unit. If those of the DC are 10 times too long, the files of data/ and model/ were made by an older rcef: install the current rcef ",
+       "and run data.R, the model scripts and this script again.", call. = FALSE)
 
 write.taf(DistributionsCombined, file = "SCF_DC.csv", dir = "output", na = "")
 
@@ -165,26 +201,6 @@ MeanWeightAtLength_wide <-
 ## ###########################################################################
 ## The CEF flow against the intercatch output
 ## ###########################################################################
-### The files of the intercatch method (InterCatch) for the same stock and year, all the catch categories
-### together: caton, the catch in tonnes; canum, the numbers at length in fish; weca, the mean weight at
-### length in grams. Seven lines of header and then one line of values. canum and weca have a value for every
-### mm from the first length to the last - 0 where no class starts, or no fish are in it - and canum has a
-### comma for the thousands.
-read_intercatch <- function(file)
-{
-  x     <- readLines(file, warn = FALSE)
-  range <- as.numeric(strsplit(trimws(x[5]), "\\s+")[[1]])         # the first and the last length, in mm
-  list(unit   = trimws(x[7]),
-       length = seq(range[1], range[2]),
-       value  = as.numeric(gsub(",", "", strsplit(trimws(x[8]), "\\s+")[[1]])))
-}
-
-caton <- read_intercatch(file.path("boot/data", catch_year, "caton.txt"))
-canum <- read_intercatch(file.path("boot/data", catch_year, "canum.txt"))
-weca  <- read_intercatch(file.path("boot/data", catch_year, "weca.txt"))
-
-stopifnot(caton$unit == "in tonnes", canum$unit == "in numbers", weca$unit == "in grams",
-          length(canum$value) == length(canum$length), identical(canum$length, weca$length))
 
 ### Table 3 of the CatchAndSampleDataTables of InterCatch: the same catch, numbers and mean weights, before they
 ### are added up - a row for every stratum (country, catch category, season, area, fleet) and length. The

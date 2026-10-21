@@ -188,6 +188,17 @@ dist_all <- dist_all %>%
                              variableType == "Number" & variableUnit == "N"   ~ value / 1000))
 stopifnot(!anyNA(dist_all$fish_e3[dist_all$variableType == "Number"]))    # a unit that is neither N nor NE3 has no fish
 
+## ... and in the same unit. The mean length (weighted by the fish) of the two has to be about the same: a conversion whose classes are not
+## those of the download - the rcef before 21 October 2026 made them 10 times too long - compares nothing, and is stopped here.
+mean_mm <- dist_all %>%
+  filter(distributionType == "LengthTotal", variableType == "Number") %>%
+  group_by(source) %>%
+  summarise(mean_mm = sum(distributionClass * fish_e3) / sum(fish_e3))
+if (nrow(mean_mm) == 2 && max(mean_mm$mean_mm) / min(mean_mm$mean_mm) > 1.25)
+  stop("The mean length of the conversion (", round(mean_mm$mean_mm[mean_mm$source == "IC"]), " mm) and of the download (",
+       round(mean_mm$mean_mm[mean_mm$source == "RDBES"]), " mm) are not about the same: the lengths are not in the same unit. If those of the conversion ",
+       "are 10 times too long, it was made by an older rcef: install the current rcef and run this script again (the data/*_CEF.csv written above are not to be used).", call. = FALSE)
+
 ## the catch: one row for each record of each source, with the tonnes of it that have a length or an age distribution (its
 ## domainBiology is the one of a distribution of the same country and catch category)
 catch_keep <- c("vesselFlagCountry", "catchCategory", "originType", "variableType", "variableUnit", "total", "seasonType",
