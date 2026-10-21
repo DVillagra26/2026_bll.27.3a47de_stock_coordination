@@ -1,4 +1,4 @@
-## Report: the stock coordination of brill (bll.27.3a47de, WGNSSK 2026), from the converted InterCatch data to the CC and the DC
+## Report: the stock coordination of brill (bll.27.3a47de, WGNSSK), from the converted InterCatch data to the CC and the DC
 
 ## The text, the tables and the choice of figures are in report.qmd; this script renders it to html, pdf and Word.
 ## It reads what the other scripts leave and shows the figures they saved: nothing is raised, allocated or drawn again.
@@ -21,8 +21,14 @@ mkdir("report")
 if (is.null(quarto::quarto_path()))
   stop("Quarto was not found: install it (https://quarto.org; RStudio has one) or give its path in the variable QUARTO_PATH")
 
-msg("Report: the stock coordination of bll.27.3a47de, html, pdf and Word")
-quarto::quarto_render("report.qmd", output_format = "all")
+## The catch year is the one of the data: the subtitle of the report says it, and the working group of the year after
+## (quarto's own -M flag: it beats the subtitle written in report.qmd, which the metadata= argument of quarto_render() does not)
+catch_year <- as.integer(max(read.taf("data/catch_data_CEF.csv")$year))
+subtitle <- sprintf("From the converted InterCatch data to the Catch Combined and the Distributions Combined, catch year %d (WGNSSK %d)",
+                    catch_year, catch_year + 1L)
+
+msg("Report: the stock coordination of bll.27.3a47de, catch year ", catch_year, ": html, pdf and Word")
+quarto::quarto_render("report.qmd", output_format = "all", quarto_args = c("-M", paste0("subtitle:", subtitle)))
 
 ## The Word report is written on the template of the ICES Scientific Reports (report_template/ices_reference.docx); what Quarto
 ## leaves to do for the template is done here: the tables of one cell around the figures and the tables go, the captions and the

@@ -1,6 +1,6 @@
 ---
 title: "Stock coordination of brill, bll.27.3a47de"
-subtitle: "From the converted InterCatch data to the Catch Combined and the Distributions Combined, catch year 2025 (WGNSSK 2026)"
+subtitle: "From the converted InterCatch data to the Catch Combined and the Distributions Combined"   # report.R adds the catch year
 author: "ILVO"
 date: today
 date-format: "D MMMM YYYY"
@@ -105,6 +105,7 @@ show_code <- function(lines) {
 catch <- read_tab(files[["catch"]])
 dists <- read_tab(files[["distributions"]])
 wge   <- catch %>% filter(originType == "WGEstimate", variableType == "WeightLive") %>% mutate(t = tonnes(total, variableUnit))
+catch_year <- max(catch$year, na.rm = TRUE)     # the catch year of the data
 
 ## the raised catch
 raised <- read_tab(files[["raised"]])
@@ -187,7 +188,7 @@ The stock coordination is the step between the national data and the stock asses
 * **Catch Combined (CC)**: the catch of the stock in tonnes, by year and catch category;
 * **Distributions Combined (DC)**: the numbers (in thousands of fish) and the mean weight (in g) at length of that catch, by catch category.
 
-This report follows the data of brill in Subarea 4 and divisions 3.a and 7.d-e (*Scophthalmus rhombus*, `bll.27.3a47de`) from the InterCatch files of the working group for the catch year 2025 to those two tables, in the steps below. Everything is done in R with the package `rcef`: the raising and the allocation use the functions of the RDBESStockCoord framework (`catchRaising()` and `catchAllocationAoL()`), the two final tables are made by `catchCombined()` and `distributionsCombined()`, and the figures come from the exploration functions of the package.
+This report follows the data of brill in Subarea 4 and divisions 3.a and 7.d-e (*Scophthalmus rhombus*, `bll.27.3a47de`) from the InterCatch files of the working group for the catch year `r catch_year` to those two tables, in the steps below. Everything is done in R with the package `rcef`: the raising and the allocation use the functions of the RDBESStockCoord framework (`catchRaising()` and `catchAllocationAoL()`), the two final tables are made by `catchCombined()` and `distributionsCombined()`, and the figures come from the exploration functions of the package.
 
 The steps are the scripts of the TAF project, run in this order; each leaves the files the next one reads:
 
@@ -205,13 +206,13 @@ A few words are used throughout:
 * a **group** is a set of strata that are raised, or allocated, together; its **donors** (the *matched data*) are the strata its ratio, or its distribution, is taken from;
 * a **domain** is a set of strata that share an estimate: `domainCatchDis` ties a landings row to its discard estimate and `domainBiology` ties a stratum to its length distribution.
 
-**In numbers.** The catch of the stock for 2025 is `r t1(sum(cc$total))` t: `r t1(cc$total[cc$catchCategory == "Lan"])` t of landings and `r t1(cc$total[cc$catchCategory == "Dis"])` t of discards, of which `r t1(sum(group_tab$imported))` t were reported and `r t1(sum(group_tab$raised))` t raised. The allocation gave a length distribution to all `r t0(alloc_tab[["Catch rows"]][alloc_tab$Group == "Total"])` catch rows: `r t0(alloc_tab$sampled[alloc_tab$Group == "Total"])` sampled ones (`r t0(sum(len_dist$measured))` fish measured) and `r t0(alloc_tab$estimated[alloc_tab$Group == "Total"])` estimated ones; by weight, `r t0(share("Lan"))`% of the landings and `r t0(share("Dis"))`% of the discards have a sampled distribution. The DC holds the numbers and the mean weights of `r n_distinct(dc$distributionClass[dc$catchCategory == "Lan"])` length classes of landings and `r n_distinct(dc$distributionClass[dc$catchCategory == "Dis"])` of discards.
+**In numbers.** The catch of the stock for `r catch_year` is `r t1(sum(cc$total))` t: `r t1(cc$total[cc$catchCategory == "Lan"])` t of landings and `r t1(cc$total[cc$catchCategory == "Dis"])` t of discards, of which `r t1(sum(group_tab$imported))` t were reported and `r t1(sum(group_tab$raised))` t raised. The allocation gave a length distribution to all `r t0(alloc_tab[["Catch rows"]][alloc_tab$Group == "Total"])` catch rows: `r t0(alloc_tab$sampled[alloc_tab$Group == "Total"])` sampled ones (`r t0(sum(len_dist$measured))` fish measured) and `r t0(alloc_tab$estimated[alloc_tab$Group == "Total"])` estimated ones; by weight, `r t0(share("Lan"))`% of the landings and `r t0(share("Dis"))`% of the discards have a sampled distribution. The DC holds the numbers and the mean weights of `r n_distinct(dc$distributionClass[dc$catchCategory == "Lan"])` length classes of landings and `r n_distinct(dc$distributionClass[dc$catchCategory == "Dis"])` of discards.
 
 # The data: the converted InterCatch data
 
 ## From InterCatch to the CEF format
 
-The data are the InterCatch data of the working group for 2025: the overview files that InterCatch writes for the stock (the stock overview, the catch and sample data tables and the numbers at length). `funICoutCEF()` converts them to the Common Exchange Format (CEF v17.1), the long format of the national estimates of the RDBES:
+The data are the InterCatch data of the working group for `r catch_year`: the overview files that InterCatch writes for the stock (the stock overview, the catch and sample data tables and the numbers at length). `funICoutCEF()` converts them to the Common Exchange Format (CEF v17.1), the long format of the national estimates of the RDBES:
 
 * the **catch table**, a row for each stratum, catch category, origin and variable, with the weight of the catch (`total`) and the domains that tie it to its discard estimate and to its length distribution;
 * the **distribution table**, a `Number` row and a `WeightLive` row (the mean weight) for each length class of each sampled distribution, with the number of fish measured;

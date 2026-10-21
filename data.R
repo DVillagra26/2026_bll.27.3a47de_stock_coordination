@@ -22,6 +22,10 @@ library(here)
 here::i_am("data.R")
 base_path <- here()
 setwd(base_path)   # the paths that are relative below (data/, output/) are then inside the project folder too
+
+## The catch year of this folder: the InterCatch files are in boot/data/<catch_year> and it is the year of the RDBES download below.
+## For another year: copy the folder, change this year and the folder in the here() lines of the scripts.
+catch_year <- 2025
 boot_path <- file.path(base_path, "boot/data")
 data_path <- file.path(base_path, "data")
 output_path <- file.path(base_path, "output")
@@ -32,18 +36,18 @@ mkdir(report_path)
 
 ## To files:
 funICoutCEF(dat_path = boot_path,
-            years = 2025,
+            years = catch_year,
             metier6 = "fleet",
             output_format = "to_file",
             out_path = data_path,
             keep_temp_file = TRUE,
-            file_prefix = "bll_2025_")
+            file_prefix = paste0("bll_", catch_year, "_"))
 
 
 ## An empty field of the CEF files is missing, so it is read as NA. read.taf() is read.csv(), which reads it as the text "":
 ## the raising and the allocation then take "" for a domain of its own that every record without one shares.
-catch_data    <- read.taf(file.path(data_path, "bll_2025_catches_CEF_v17.1.csv"), na.strings = c("NA", ""))
-distributions_data <- read.taf(file.path(data_path, "bll_2025_distributions_CEF_v17.1.csv"), na.strings = c("NA", ""))
+catch_data    <- read.taf(file.path(data_path, paste0("bll_", catch_year, "_catches_CEF_v17.1.csv")), na.strings = c("NA", ""))
+distributions_data <- read.taf(file.path(data_path, paste0("bll_", catch_year, "_distributions_CEF_v17.1.csv")), na.strings = c("NA", ""))
 
 
 catch_data <- derive_fields(catch_data)
@@ -63,10 +67,10 @@ my_payload_cef <- list(
   CEFFilters= list(
     CNVesselFlagCountry= list("All"),
     CNstock= list("bll.27.3a47de"),
-    CNyear=  list("2025"),
+    CNyear=  list(as.character(catch_year)),
     SNstock= list("bll.27.3a47de"),
-    SNyear=  list("2025"),
-    ENyear=  list("2025"),
+    SNyear=  list(as.character(catch_year)),
+    ENyear=  list(as.character(catch_year)),
     ENStockForDeterminingAreas= list("bll.27.3a47de")))
 
 zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = data_path)
@@ -137,7 +141,7 @@ if (!exists("zipfile") || !file.exists(zipfile)) {            # the newest downl
 }
 in_zip <- utils::unzip(zipfile, list = TRUE)$Name
 message("RDBES download: ", zipfile, " (", paste(in_zip, collapse = ", "), ")")
-if (!any(grepl("Effort", in_zip))) message("it has no effort table: the conversion made bll_2025_effort_CEF_v17.1.csv, the download has none to compare it with")
+if (!any(grepl("Effort", in_zip))) message("it has no effort table: the conversion made bll_", catch_year, "_effort_CEF_v17.1.csv, the download has none to compare it with")
 
 rdbes_catch <- read_csv(unz(zipfile, "CatchNatEst.csv"), show_col_types = FALSE)
 rdbes_dist  <- read_csv(unz(zipfile, "DistributionNatEst.csv"), show_col_types = FALSE)

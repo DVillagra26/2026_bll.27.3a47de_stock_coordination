@@ -33,7 +33,9 @@ distribution_alloc %>% group_by(variableType, catchCategory) %>%
 ## The header of the files
 ## ###########################################################################
 
-workingGroupYear <- 2026   # the year of the working group these files are for: 2026 for the WGNSSK 2026
+catch_year <- unique(catch_data_raised$year)   # the catch year of the data (the one data.R was made for)
+stopifnot(length(catch_year) == 1)
+workingGroupYear <- catch_year + 1   # the year of the working group these files are for: the year after the catch year (the WGNSSK 2026 for 2025)
 version <- 1
 versionDescription <- "WKRDBES FLOW first run discard raising"   # a text with no commas: it is written to a csv
 calendarYear <- "Y"     # "Y": the year is the calendar year. "N": a model year that starts on another date,
@@ -177,9 +179,9 @@ read_intercatch <- function(file)
        value  = as.numeric(gsub(",", "", strsplit(trimws(x[8]), "\\s+")[[1]])))
 }
 
-caton <- read_intercatch("boot/data/2025/caton.txt")
-canum <- read_intercatch("boot/data/2025/canum.txt")
-weca  <- read_intercatch("boot/data/2025/weca.txt")
+caton <- read_intercatch(file.path("boot/data", catch_year, "caton.txt"))
+canum <- read_intercatch(file.path("boot/data", catch_year, "canum.txt"))
+weca  <- read_intercatch(file.path("boot/data", catch_year, "weca.txt"))
 
 stopifnot(caton$unit == "in tonnes", canum$unit == "in numbers", weca$unit == "in grams",
           length(canum$value) == length(canum$length), identical(canum$length, weca$length))
@@ -187,7 +189,7 @@ stopifnot(caton$unit == "in tonnes", canum$unit == "in numbers", weca$unit == "i
 ### Table 3 of the CatchAndSampleDataTables of InterCatch: the same catch, numbers and mean weights, before they
 ### are added up - a row for every stratum (country, catch category, season, area, fleet) and length. The
 ### numbers (CANUM) are in fish and the mean weights (WECA) in grams, as in canum and weca.
-catch_and_samples <- readxl::read_excel("boot/data/2025/CatchAndSampleDataTables.xlsx", sheet = "Table 2",
+catch_and_samples <- readxl::read_excel(file.path("boot/data", catch_year, "CatchAndSampleDataTables.xlsx"), sheet = "Table 2",
                                         col_types = "text")
 
 
