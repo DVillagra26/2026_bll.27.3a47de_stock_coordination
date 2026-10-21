@@ -12,19 +12,23 @@ library(ggplot2)
 
 library(icesRDBES)
 library(remotes)
-remotes::install_github("DVillagra26/rcef", dependencies = TRUE, force = TRUE)
+# remotes::install_github("DVillagra26/rcef", dependencies = TRUE, force = TRUE)
 library(rcef)
-
+library(here)
 # taf.bootstrap()
-mkdir("data")
-mkdir("report")
-mkdir("report/figures")
-
-
 
 ############### USING INTERCATCH DATA #################
-boot_path <- "./boot/data"
-data_path <- "./data"
+## The project folder: here() finds it from the place of this script in it
+here::i_am("data.R")
+base_path <- here()
+setwd(base_path)   # the paths that are relative below (data/, output/) are then inside the project folder too
+boot_path <- file.path(base_path, "boot/data")
+data_path <- file.path(base_path, "data")
+output_path <- file.path(base_path, "output")
+report_path <- file.path(base_path, "report")
+
+mkdir(data_path)
+mkdir(report_path)
 
 ## To files:
 funICoutCEF(dat_path = boot_path,
@@ -36,8 +40,10 @@ funICoutCEF(dat_path = boot_path,
             file_prefix = "bll_2025_")
 
 
-catch_data    <- read.taf(file.path(data_path, "bll_2025_catches_CEF_v17.1.csv"))
-distributions_data <- read.taf(file.path(data_path, "bll_2025_distributions_CEF_v17.1.csv"))
+## An empty field of the CEF files is missing, so it is read as NA. read.taf() is read.csv(), which reads it as the text "":
+## the raising and the allocation then take "" for a domain of its own that every record without one shares.
+catch_data    <- read.taf(file.path(data_path, "bll_2025_catches_CEF_v17.1.csv"), na.strings = c("NA", ""))
+distributions_data <- read.taf(file.path(data_path, "bll_2025_distributions_CEF_v17.1.csv"), na.strings = c("NA", ""))
 
 
 catch_data <- derive_fields(catch_data)
@@ -46,6 +52,9 @@ distributions_data <- derive_fields(catch_data, distributions_data, what = "dist
 write.taf(catch_data, file = "catch_data_CEF.csv", dir = "data")
 write.taf(distributions_data, file = "distributions_data_CEF.csv", dir = "data")
 
+
+
+############### USING CEF DOWLOAD DATA #################
 
 my_payload_cef <- list(
   Hierarchies= list("HNI"),
@@ -60,9 +69,7 @@ my_payload_cef <- list(
     ENyear=  list("2025"),
     ENStockForDeterminingAreas= list("bll.27.3a47de")))
 
-zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = "./data")
-
-
+zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = data_path)
 
 
 ## ###########################################################################
@@ -71,6 +78,7 @@ zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = "./data")
 ##
 ## The catch (CatchNatEst) and the distributions (DistributionNatEst) of the RDBES download against what the
 ## conversion of InterCatch made (funICoutCEF above: catch_data and distributions_data, "IC" below).
+## The other comparison - the CEF flow against the output of InterCatch - is in output.R: output/4_CEF_flow_vs_intercatch_final/ (tables) and output/figures/4_CEF_flow_vs_intercatch_final/ (figures).
 ##
 ## WHAT TO OPEN
 ##   catch_compare       the catch, stratum by stratum (country, catch category, season, area, fleet): the total of IC and of
@@ -80,32 +88,41 @@ zipfile <- rdbes_download_data(payload = my_payload_cef, dest_dir = "./data")
 ##   dist_class_compare  the same class by class: fish and mean weight
 ##   rdbes_gap           catch_compare added up by country, area, season and metier4 (a list of tables: catch_*, length_*, age_*
 ##                       for the tonnes, NaL_* and NaA_* for the numbers)
-## They are also written to output/rdbes_vs_intercatch/: rdbes_vs_intercatch.xlsx (a sheet each, catch_compare first) and as
-## csv. The figures are in output/figures/rdbes_vs_ic/, a folder for each of five amounts:
-##   catch   the catch (t)                                          length  the catch with a length distribution (t)
-##   age     the catch with an age distribution (t)                 NaL     the sum of the numbers at length (thousand fish)
-##   NaA     the sum of the numbers at age (thousand fish)
+## They are also written to output/1_IC_conversion_vs_CEF_download/, named for what it compares: the tables as csv in tables/
+## and all of them in IC_conversion_vs_CEF_download.xlsx (a sheet each, catch_compare first). The figures are in
+## output/figures/1_IC_conversion_vs_CEF_download/, a folder for each of five amounts:
+##   catch              the catch (t)                               catch_with_length  the catch with a length distribution (t)
+##   catch_with_age     the catch with an age distribution (t)      numbers_at_length  the sum of the numbers at length (thousand fish)
+##   numbers_at_age     the sum of the numbers at age (thousand fish)
 ## each for all countries together, by country, by country and area, by country, area and season, and by country, area, season
 ## and metier4 (a figure for each country). In every figure each stratum has two bars, IC and the RDBES, and each bar is
 ## stacked by the ORIGIN of the catch records in it: WGEstimate (dark) or Official (light) - Germany, for instance, is
-## WGEstimate in IC and Official in the RDBES.
+## WGEstimate in IC and Official in the RDBES. Every stratum of the catch is in every figure of its level: one with none of the amount in
+## either source (no length distribution, say) is a row without a bar, never left out.
 ##
 ## `status` says whether the two agree: "same", "differs", "only IC" (the conversion has it, the RDBES has none: missing
 ## in the RDBES) or "only RDBES" (missing in the conversion).
 
 ## 0. Settings
 
-tol_t   <- 0.001                 # two amounts are the same when they differ by less than this (a kg) ...
-tol_pct <- 1                     # ... or by less than this share (%) of the larger
-finest_min_diff <- 0.01          # in the figures of the finest level only the strata that differ by this (t, or thousand fish) or more are drawn
+tol_t   <- 0                 # two amounts are the same when they differ by less than this (a kg) ...
+tol_pct <- 0                     # ... or by less than this share (%) of the larger
 
-mkdir("output/rdbes_vs_intercatch")
-fig_dir <- "output/figures/rdbes_vs_ic"          # short: the path of a figure must stay under the 260 characters of Windows
+## The folders of this comparison, named for what it compares: its tables in the output folder, its figures in output/figures
+compare_dir <- file.path(output_path, "1_IC_conversion_vs_CEF_download")
+tables_dir  <- file.path(compare_dir, "tables")
+fig_dir     <- file.path(output_path, "figures", "1_IC_conversion_vs_CEF_download")   # short: the path of a figure must stay under the 260 characters of Windows
 
-## what an earlier run (or an earlier version of this section) wrote goes, so that nothing stale is left next to the new files
-unlink(c(list.files("output/rdbes_vs_intercatch", full.names = TRUE), list.files(fig_dir, recursive = TRUE, full.names = TRUE),
-         list.files("output", "^rdbes_vs_intercatch_.*[.]csv$", full.names = TRUE),
-         list.files("output/figures", "^rdbes_vs_intercatch_[0-9]+[.]png$", full.names = TRUE)))
+## what an earlier run (or an earlier version of this section) wrote goes, so that nothing stale is left next to the new files:
+## these folders, and the ones they had before they were named for what they compare
+unlink(c(compare_dir, fig_dir,
+         file.path(output_path, c("IC_conversion_vs_CEF_download", "IC-conversion_vs_RDBES-download", "rdbes_vs_intercatch")),
+         file.path(output_path, "figures", "IC_conversion_vs_CEF_download"), file.path(report_path, "figures", "rdbes_vs_ic"),
+         list.files(output_path, "^rdbes_vs_intercatch_.*[.]csv$", full.names = TRUE),
+         list.files(file.path(output_path, "figures"), "^rdbes_vs_intercatch_[0-9]+[.]png$", full.names = TRUE)), recursive = TRUE)
+if (dir.exists(file.path(report_path, "figures")) && !length(list.files(file.path(report_path, "figures"), all.files = TRUE, no.. = TRUE)))
+  unlink(file.path(report_path, "figures"), recursive = TRUE)     # the folder that held them, when nothing else is in it
+mkdir(tables_dir)
 
 
 ## ###########################################################################
@@ -154,9 +171,8 @@ not_coded <- setdiff(unique(catch_data$vesselFlagCountry), c(names(country_code)
 if (length(not_coded)) warning("no code for the country: ", paste(not_coded, collapse = ", "), " (add it to country_code)")
 season_of <- function(type, value) ifelse(type == "Year", "Year", paste0(substr(type, 1, 1), value))
 
-## the distributions first, since the catch records say which of them have one. funIntercatchCEF multiplies the length
-## classes of InterCatch by 10, so the conversion's are 10 times the RDBES's (a brill of 300 mm is in class 3000): its
-## classes are divided by the scale found from the longest. Numbers are in thousands of fish, mean weights in grams.
+## the distributions first, since the catch records say which of them have one. The length classes are in mm in both.
+## Numbers are in thousands of fish, mean weights in grams.
 dist_keep <- c("vesselFlagCountry", "catchCategory", "domainBiology", "distributionType", "distributionClass", "variableType",
                "variableUnit", "value", "numMeasurements", "seasonValue", "areaValue", "fleetValue", "metier4", "ICESSubArea")
 dist_all <- bind_rows(IC = same_types(distributions_data, dist_keep), RDBES = same_types(rdbes_dist, dist_keep), .id = "source")
@@ -167,10 +183,6 @@ dist_all <- dist_all %>%
   mutate(fish_e3 = case_when(variableType == "Number" & variableUnit == "NE3" ~ value,         # the fish of a class, in thousands
                              variableType == "Number" & variableUnit == "N"   ~ value / 1000))
 stopifnot(!anyNA(dist_all$fish_e3[dist_all$variableType == "Number"]))    # a unit that is neither N nor NE3 has no fish
-longest  <- tapply(dist_all$distributionClass[dist_all$distributionType == "LengthTotal"],
-                   dist_all$source[dist_all$distributionType == "LengthTotal"], max)
-ic_length_scale <- 10^round(log10(longest[["IC"]] / longest[["RDBES"]]))
-message("length classes: IC up to ", longest[["IC"]], " mm, RDBES up to ", longest[["RDBES"]], " mm: those of IC are divided by ", ic_length_scale)
 
 ## the catch: one row for each record of each source, with the tonnes of it that have a length or an age distribution (its
 ## domainBiology is the one of a distribution of the same country and catch category)
@@ -256,7 +268,7 @@ dist_cmp <- dist_all %>%
   mutate(country  = as_iso(vesselFlagCountry),
          category = ifelse(catchCategory == "DisBMS", "Dis", catchCategory),
          season   = ifelse(is.na(seasonValue), NA_character_, ifelse(seasonValue > 4, "Year", paste0("Q", seasonValue))),
-         class    = distributionClass / ifelse(source == "IC" & distributionType == "LengthTotal", ic_length_scale, 1),
+         class    = distributionClass,
          weight_g = case_when(variableType == "WeightLive" & variableUnit == "g"  ~ value,
                               variableType == "WeightLive" & variableUnit == "kg" ~ value * 1000)) %>%
   place_lists() %>%
@@ -416,7 +428,7 @@ dist_class_compare <- class_wide %>%
 sheets <- c(list(catch_compare = catch_compare, dist_compare = dist_compare, dist_class_compare = dist_class_compare), rdbes_gap)
 stopifnot(!anyDuplicated(substr(names(sheets), 1, 31)))          # the name of an Excel sheet has at most 31 characters
 for (nm in names(sheets))
-  tryCatch(write.taf(sheets[[nm]], file = paste0(ifelse(nm %in% names(rdbes_gap), "gap_", ""), nm, ".csv"), dir = "output/rdbes_vs_intercatch", quote = TRUE),
+  tryCatch(write.taf(sheets[[nm]], file = paste0(ifelse(nm %in% names(rdbes_gap), "gap_", ""), nm, ".csv"), dir = tables_dir, quote = TRUE),
            error = function(e) warning("could not write ", nm, ": ", conditionMessage(e), " (is it open in Excel?)", call. = FALSE))
 if (requireNamespace("openxlsx", quietly = TRUE)) {
   wb <- openxlsx::createWorkbook()
@@ -426,7 +438,7 @@ if (requireNamespace("openxlsx", quietly = TRUE)) {
     openxlsx::freezePane(wb, substr(nm, 1, 31), firstRow = TRUE)
     openxlsx::setColWidths(wb, substr(nm, 1, 31), cols = seq_along(sheets[[nm]]), widths = "auto")
   }
-  tryCatch(openxlsx::saveWorkbook(wb, "output/rdbes_vs_intercatch/rdbes_vs_intercatch.xlsx", overwrite = TRUE),
+  tryCatch(openxlsx::saveWorkbook(wb, file.path(compare_dir, "IC_conversion_vs_CEF_download.xlsx"), overwrite = TRUE),
            error = function(e) warning("could not write the workbook: ", conditionMessage(e), " (is it open in Excel?)", call. = FALSE))
 } else message("install the package openxlsx to get the tables as one Excel workbook")
 
@@ -455,7 +467,7 @@ origin_col <- function(origins)                              # the colour of eac
              paste(s, origins))))
 
 plot_levels <- function(data, by, value, what, unit = "Tonnes", all_categories = FALSE, by_country = FALSE, horizontal = FALSE,
-                        min_diff = NULL, label_values = FALSE, label_origin = FALSE, ncol = 4, note = NULL) {
+                        label_values = FALSE, label_origin = FALSE, ncol = 4, note = NULL) {
   d <- data %>% filter(category %in% c("Lan", "Dis"))
   if (all_categories) d <- bind_rows(d, mutate(d, category = "All"))
   d <- d %>% group_by(across(all_of(c(by, "category", "source", "origin")))) %>%
@@ -463,23 +475,19 @@ plot_levels <- function(data, by, value, what, unit = "Tonnes", all_categories =
   inner <- setdiff(by, "country")
   d$stratum <- if (length(inner)) do.call(paste, c(d[inner], sep = " ")) else if ("country" %in% by) d$country else "all countries"
   d$panel   <- if (by_country) paste(d$country, d$category, sep = " - ") else as.character(d$category)
-  d <- d %>% group_by(panel, stratum) %>% filter(sum(y) > 0) %>% ungroup()          # a stratum with no catch in either is not drawn
+  ## every stratum is drawn, also one with none of this amount in either source (a row without a bar): a stratum that is not in a figure
+  ## looks like data that is missing. Only the strata that have some of it say which origins colour the bars
+  some <- d %>% group_by(panel, stratum) %>% filter(sum(y) > 0) %>% ungroup()
   ## the order of the strata: area, then season, then metier4; of the panels: country, then Lan and Dis
   keys <- lapply(inner, function(k) if (k == "season") match(d[[k]], season_levels) else d[[k]])
   stratum_levels <- unique(d$stratum[do.call(order, c(keys, list(d$stratum)))])
   panel_levels   <- unique(d$panel[order(if (by_country) d$country else rep("", nrow(d)), match(d$category, c("Lan", "Dis", "All")))])
-  ## the strata that differ, when asked
-  if (!is.null(min_diff)) {
-    w <- d %>% group_by(panel, stratum, source) %>% summarise(y = sum(y), .groups = "drop") %>%
-      pivot_wider(names_from = source, values_from = y, values_fill = 0)
-    for (s in c("IC", "RDBES")) if (!s %in% names(w)) w[[s]] <- 0
-    keep <- w %>% filter(status_of(IC, RDBES) != "same", abs(RDBES - IC) >= min_diff)
-    d <- semi_join(d, keep, by = c("panel", "stratum"))
-  }
-  if (!nrow(d) || all(d$y == 0)) return(NULL)
+  if (!nrow(some)) return(NULL)                       # none of this anywhere: nothing to draw
+  if (nrow(distinct(d, panel, stratum)) > nrow(distinct(some, panel, stratum)))
+    note <- c(note, "Every stratum is drawn; one with none of this in either source has no bar.")
   ## both sources in every stratum, so that IC is always the first bar and the RDBES the second; the origins stacked
-  origin_levels <- c(intersect("WGEstimate", d$origin), setdiff(sort(unique(d$origin)), "WGEstimate"))
-  d <- select(d, panel, stratum, source, origin, y)
+  origin_levels <- c(intersect("WGEstimate", some$origin), setdiff(sort(unique(some$origin)), "WGEstimate"))
+  d <- select(d, panel, stratum, source, origin, y) %>% mutate(origin = ifelse(y > 0, origin, NA))      # no amount, no origin
   d <- distinct(d, panel, stratum) %>% tidyr::crossing(source = c("IC", "RDBES")) %>%
     left_join(d, by = c("panel", "stratum", "source")) %>%
     mutate(y = coalesce(y, 0), origin = factor(coalesce(origin, origin_levels[[1]]), origin_levels)) %>%
@@ -511,7 +519,7 @@ plot_levels <- function(data, by, value, what, unit = "Tonnes", all_categories =
     mutate(label = ifelse(origin != origin_levels[[1]] & y >= 0.16 * max(cum), as.character(origin), "")) %>% ungroup()
   if (label_origin && any(nzchar(others$label))) p <- p + geom_text(data = others, aes(label = label), position = dodge, size = 2.6, colour = "grey20",
                                                        angle = if (horizontal) 0 else 90, vjust = 0.5, hjust = 1.1)
-  caption <- paste0("IC: the conversion of InterCatch. Two bars in each stratum, IC ", if (horizontal) "above" else "on the left",
+  caption <- paste0("IC: the InterCatch data converted to CEF. RDBES: the CEF downloaded from the RDBES database. Two bars in each stratum, IC ", if (horizontal) "above" else "on the left",
                     " and the RDBES ", if (horizontal) "below" else "on the right",
                     "; the colour is the origin of the catch records in the bar, stacked: WGEstimate (dark), Official (light). ", unit, ".")
   caption <- paste(unlist(lapply(c(caption, note), strwrap, width = max(70, round(size[["width"]] * 9)))), collapse = "\n")
@@ -528,8 +536,11 @@ plot_levels <- function(data, by, value, what, unit = "Tonnes", all_categories =
 }
 
 fig_files <- character()
+fig_folder <- c(catch = "catch", length = "catch_with_length", age = "catch_with_age",       # the folder of each amount, named for what is in it
+                NaL = "numbers_at_length", NaA = "numbers_at_age")
 save_fig <- function(res, folder, name) {
   if (is.null(res)) return(invisible(NULL))
+  folder <- fig_folder[[folder]]
   mkdir(file.path(fig_dir, folder))
   file <- file.path(fig_dir, folder, paste0(name, ".png"))
   if (nchar(normalizePath(file, mustWork = FALSE)) > 250) warning("the path of ", file, " is too long for Windows (260): move the project nearer the root")
@@ -551,12 +562,11 @@ for (v in names(variables)) {
     title <- paste(titles[[v]], "-", by_what[[l]])
     shared <- if (numbers && i >= 3) "A distribution that several catch records use is shared among them in proportion to their catch weight."
     if (l == "country_area_season_metier4") {
-      ## the finest level: a figure for each country, with the strata that differ by finest_min_diff or more
+      ## the finest level: a figure for each country, with all its strata
       for (cty in sort(unique(catch_all$country)))
         save_fig(plot_levels(filter(catch_all, country == cty), levels[[l]], variables[[v]],
                              paste0(titles[[v]], " - ", cty, ": by area, season and metier4"), unit = units[[v]],
-                             horizontal = TRUE, min_diff = finest_min_diff,
-                             note = c(note, shared, paste0("Only the strata that differ by ", finest_min_diff, " ", tolower(units[[v]]), " or more are drawn."))),
+                             horizontal = TRUE, note = c(note, shared)),
                  v, paste0(i, "_", cty, "_area_season_metier4"))
     } else {
       save_fig(plot_levels(catch_all, levels[[l]], variables[[v]], title, unit = units[[v]], all_categories = l %in% c("total", "country"),

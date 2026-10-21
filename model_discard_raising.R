@@ -11,13 +11,24 @@ library(RColorBrewer)
 library(readr)
 library(ggplot2)
 library(rcef)
+library(here)
+
+## The project folder: every path below is relative to it
+here::i_am("model_discard_raising.R")
+setwd(here())
 
 mkdir("model")
 mkdir("output")
 
-## Every figure of this script is written to output/figures, numbered in the order it is drawn.
+## Every figure of this script is written to output/figures/2_discard_raising (the folders of output/figures are numbered in the
+## order the scripts make them), numbered in the order it is drawn.
+## What an earlier run left there goes first, and so do the folder this script had before it was numbered and the figures it
+## wrote to output/figures itself before it had a folder.
+fig_dir <- "output/figures/2_discard_raising"
+unlink(c(fig_dir, "output/figures/discard_raising", list.files("output/figures", "^discard_raising_[0-9]+[.]png$", full.names = TRUE)), recursive = TRUE)
+mkdir(fig_dir)
 fig_n <- 0
-fig <- function() sprintf("output/figures/discard_raising_%02d.png", fig_n <<- fig_n + 1)
+fig <- function() sprintf("%s/discard_raising_%02d.png", fig_dir, fig_n <<- fig_n + 1)
 
 catch_data <- read.taf(file = "data/catch_data_CEF.csv")
 distributions_data <- read.taf(file = "data/distributions_data_CEF.csv")
@@ -25,14 +36,14 @@ distributions_data <- read.taf(file = "data/distributions_data_CEF.csv")
 head(catch_data, 2) %>% as.data.frame()
 table(catch_data$metier4, useNA = "always")
 
-catch_data_BMS <- catch_data %>% 
-  filter(catchCategory == "BMS") %>% 
+catch_data_BMS <- catch_data %>%
+  filter(catchCategory == "BMS") %>%
   mutate(importedOrRaised  = "imported",
          DrGroup = NA,
          fleetGroup = "BMS")
 
-catch_data <- catch_data %>% 
-  filter(catchCategory != "BMS") %>% 
+catch_data <- catch_data %>%
+  filter(catchCategory != "BMS") %>%
   mutate(fleetGroup = case_when (metier4 =="TBB" ~"G1_TBB",
                                  metier4 %in% c("GTR", "GNS") ~"G2_GTR_GNS",
                                  metier4 %in% c("OTB", "SDN", "SSC") ~"G3_OTB_SSC_SDN",
@@ -49,13 +60,13 @@ catch_data <- catch_data %>%
 plot_catches(catch = catch_data, x = "metier4", facet = "catchCategory", save = fig())
 
 ### 74 % pf the landing have estimate for discards, which is good.
-plot_coverage_bar(catch = catch_data, y = "metier4", save = fig())
+plot_coverage_bar(catch = catch_data, y = "metier5", save = fig())
 
 
 plot_coverage_bar(catch = catch_data, y = "metier6", facet = "fleetGroup", fill="mesh", palette = "default", save = fig())
 ### All three G1-3 comply with the minimum 50% coverage to be raised as a group.
 
-plot_coverage_heat(catch = catch_data, y = "metier4", x = "mesh", facet = "fleetGroup", min_cov = 50, min_trip = NULL, save = fig())
+plot_coverage_grid(catch = catch_data, y = "metier4", x = "mesh", facet = "fleetGroup", min_cov = 50, min_trip = NULL, save = fig())
 
 
 ### For the G1_TBB fleet:
@@ -76,7 +87,7 @@ plot_coverage_heat(catch = catch_data, y = "metier4", x = "mesh", facet = "fleet
 plot_coverage_map(catch = catch_data, area = "areaValue", group = "fleetGroup", save = fig())
 
 ### For the G1_TBB fleet:
-###             discard data is well sampled across the 7.de and 4 
+###             discard data is well sampled across the 7.de and 4
 
 ### For the G2_GTR_GNS fleet:
 ###             Mostly well sampled in the 7.de area, only about 25% in 4
@@ -89,13 +100,13 @@ plot_coverage_map(catch = catch_data, area = "areaValue", group = "fleetGroup", 
 
 ######## DISCARD RATE ###############
 
-### AFTER LOOKING AT THE 
+### AFTER LOOKING AT THE
 
 cov_finest <- build_coverage_strata(catch = catch_data)
 
-#### Check discard rates that might not be representative 
-fleet_high_DR <-  cov_finest %>% 
-  filter (rate  > 0.5 & !metier4 %in% c("MIS")) %>% 
+#### Check discard rates that might not be representative
+fleet_high_DR <-  cov_finest %>%
+  filter (rate  > 0.5 & !metier4 %in% c("MIS")) %>%
   pull(Stratum)
 
 plot_DR(catch = catch_data, x = "areaValue",colour = "mesh", facet = "fleetGroup",jitter = TRUE, rate = "ratio",reference = 0.5, save = fig())
@@ -110,12 +121,11 @@ plot_DR(catch = catch_data, x = "areaValue",colour = "mesh", facet = "fleetGroup
 ###             fairly largeer discard rate for the 27.3.21 and some higher values also for 7.d-7.e.
 
 
-
 dc <- build_discard_clusters(catch_data, dims = c("metier4","mesh", "vesselFlagCountry", "seasonValue", "areaValue"), k = 4)
 dc$importance
 
 #### although discard rate are only explained in about 18% by Dim 1 and 2:
-     # - the importance of the variables is as such 
+     # - the importance of the variables is as such
 
 # variable cramers_v
 # areaValue areaValue 0.3284239
@@ -176,7 +186,7 @@ catch_data_raised <-
                logFile = "Log.txt",
                assembled_output = TRUE)
 
-catch_data_raised <- catch_data_raised %>% 
+catch_data_raised <- catch_data_raised %>%
   rbind(catch_data_BMS)
 
 write.taf(catch_data_raised, file = "model/catch_data_raised.csv")
@@ -198,8 +208,8 @@ catch_data_raised %>%
 plot_DR(catch = catch_data_raised, x = "fleetGroup",colour = "mesh",jitter = TRUE, rate = "ratio",reference = 0.5, save = fig())
 
 
-## Keep this scenario for the comparison at the end of the script: the
-## alternative below re-uses the same object names.
+## Keep this scenario: the alternative below re-uses the same object names. The two are compared in
+## model_discard_raising_compare.R.
 raised_catch_scenario1 <- catch_data_raised
 
 
@@ -292,6 +302,9 @@ catch_data_raised <-
 
 raised_catch_scenario2 <- catch_data_raised
 
+## Kept for model_discard_raising_compare.R, with the BMS put back as for the usual method
+write.taf(rbind(raised_catch_scenario2, catch_data_BMS), file = "model/catch_data_raised_3a21.csv")
+
 
 catch_data_raised %>%
   group_by(importedOrRaised, catchCategory) %>%
@@ -316,42 +329,4 @@ plot_DR(catch = catch_data_raised, x = "DrGroup", colour = "mesh", rate = "ratio
 plot_DR(catch = catch_data_raised, x = "areaValue", colour = "mesh", facet = "fleetGroup", rate = "ratio", reference = 0.5, save = fig())
 
 
-## ###########################################################################
-## Compare the two scenarios
-## ###########################################################################
-
-### The scenarios are called after their objects unless they are named; the
-### names show in the tables and in the plot legend.
-scenarios_names <- c("Usual method", "Usual method with 3.a.21")
-
-### Imported against raised, by catch category, for both scenarios. Rows that
-### came out as NaN are raised rows whose group had no donor to draw a rate
-### from: they raise to nothing, and the "No donor (rows)" column counts them.
-comp_table <- raised_overview_table(c(raised_catch_scenario1, raised_catch_scenario2),
-                      scenarios_names = scenarios_names)
-
-### Saved for the report (report.qmd): imported against raised, by catch category, for both scenarios.
-write.taf(comp_table, file = "raising_scenarios_comparison.csv", dir = "output")
-
-### The same at any other level: add the variables to aggregate by.
-raised_overview_table(c(raised_catch_scenario1, raised_catch_scenario2),
-                      scenarios_names = scenarios_names,
-                      by = c("seasonValue","metier4"))
-
-
-### The scenarios side by side: bars = catch weight, color = scenario, shade =
-### imported or raised. catchCategory = "Dis" (or "Lan") keeps just the discards
-### (or the landings).
-plot_compare_raised(raised_catch_scenarios = c(raised_catch_scenario1, raised_catch_scenario2),
-                    scenarios_names = scenarios_names,
-                    x = "metier4", 
-                    catchCategory = "Dis", save = fig())
-
-plot_compare_raised(c(raised_catch_scenario1, raised_catch_scenario2),
-                    scenarios_names = scenarios_names,
-                    x = "metier4", 
-                    facet = "vesselFlagCountry", 
-                    catchCategory = "Dis", save = fig())
-
-
-
+## The two scenarios are compared with each other, and with the hierarchical groups, in model_discard_raising_compare.R.
