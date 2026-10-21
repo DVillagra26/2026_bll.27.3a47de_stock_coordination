@@ -56,7 +56,7 @@ library(knitr)
 files <- c(catch = "data/catch_data_CEF.csv",
            distributions = "data/distributions_data_CEF.csv",
            raised = "model/catch_data_raised.csv",
-           allocated_catch = "model/catch_data_allocated.csv",
+           allocated_catch = "model/catch_data_raised.csv",
            allocated_distributions = "model/distributions_data_allocated.csv",
            cc = "output/SCF_CC.csv",
            dc = "output/SCF_DC.csv")
@@ -194,7 +194,7 @@ The steps are the scripts of the TAF project, run in this order; each leaves the
 
 1. **Data** (`data.R`): the InterCatch data are converted to the CEF format and the columns the groups are written on are derived. Files: `data/catch_data_CEF.csv` and `data/distributions_data_CEF.csv`.
 2. **Discard raising** (`model_discard_raising.R`): the landings without a discard estimate get one, from the discard ratio of a group of comparable strata. File: `model/catch_data_raised.csv`.
-3. **Length allocation** (`model_length_allocation.R`): every stratum without a length distribution gets one, from the distributions of a group of comparable strata. Files: `model/catch_data_allocated.csv` and `model/distributions_data_allocated.csv`.
+3. **Length allocation** (`model_length_allocation.R`): every stratum without a length distribution gets one, from the distributions of a group of comparable strata. Files: `model/distributions_data_allocated.csv`, and the catch it was made on is written back to `model/catch_data_raised.csv`.
 4. **Aggregation** (`output.R`): the raised catch and the allocated distributions are added up into the CC and the DC. Files: `output/SCF_CC.csv` and `output/SCF_DC.csv`.
 5. **Report** (`report.R` and `report.qmd`): this document, made from the files above and the figures the scripts saved. Files: `report/report.html` and `report/report.pdf`.
 
